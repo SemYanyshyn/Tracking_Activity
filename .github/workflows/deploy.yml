@@ -28,17 +28,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: dev-summer-tracker/package-lock.json
 
       - name: Install dependencies
+        working-directory: dev-summer-tracker
         run: npm ci
 
       - name: Build
+        working-directory: dev-summer-tracker
         run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: dev-summer-tracker/dist
 
   deploy:
     environment:
