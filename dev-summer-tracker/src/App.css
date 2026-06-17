@@ -124,7 +124,7 @@
 .entry-actions button:hover,
 .project-links a:hover {
   border-color: var(--teal);
-  box-shadow: 0 8px 18px rgba(45, 212, 191, 0.14);
+  box-shadow: 0 8px 18px rgba(143, 220, 200, 0.12);
   transform: translateY(-1px);
 }
 
@@ -179,7 +179,7 @@
 .tab-button.active {
   color: #03110f;
   background: var(--teal);
-  box-shadow: 0 10px 22px rgba(45, 212, 191, 0.22);
+  box-shadow: 0 10px 22px rgba(143, 220, 200, 0.18);
 }
 
 .content-panel {
@@ -230,9 +230,9 @@
 .sunday-card,
 .roadmap-progress {
   padding: 20px;
-  border: 1px solid rgba(45, 212, 191, 0.22);
+  border: 1px solid rgba(143, 220, 200, 0.18);
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(45, 212, 191, 0.11), var(--surface-muted));
+  background: linear-gradient(135deg, rgba(143, 220, 200, 0.09), var(--surface-muted));
 }
 
 .goal-card h3,
@@ -533,7 +533,7 @@
 
 .checkbox-grid label:hover {
   border-color: var(--teal);
-  box-shadow: 0 8px 18px rgba(45, 212, 191, 0.12);
+  box-shadow: 0 8px 18px rgba(143, 220, 200, 0.1);
 }
 
 .checkbox-grid input {
@@ -739,7 +739,7 @@
 
 .status-deployed {
   color: #99f6e4;
-  background: rgba(45, 212, 191, 0.13);
+  background: rgba(143, 220, 200, 0.1);
 }
 
 .status-finished,
@@ -755,12 +755,12 @@
 
 .area-badge {
   color: var(--teal);
-  background: rgba(45, 212, 191, 0.12);
+  background: rgba(143, 220, 200, 0.1);
 }
 
 .priority-low {
   color: #99f6e4;
-  background: rgba(45, 212, 191, 0.12);
+  background: rgba(143, 220, 200, 0.1);
 }
 
 .priority-medium {
@@ -867,8 +867,8 @@
 }
 
 .primary-button:hover {
-  background: #5eead4;
-  box-shadow: 0 10px 22px rgba(45, 212, 191, 0.22);
+  background: #b7eadc;
+  box-shadow: 0 10px 22px rgba(143, 220, 200, 0.18);
   transform: translateY(-1px);
 }
 
