@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
+import {
+  clearDailyEntriesFromSupabase,
+  deleteDailyEntryFromSupabase,
+  loadDailyEntriesFromSupabase,
+  saveDailyEntryToSupabase,
+  syncDailyEntriesToSupabase,
+} from './dailyEntriesApi.js'
 import Dashboard from './components/Dashboard.jsx'
 import DailyTracker from './components/DailyTracker.jsx'
 import Header from './components/Header.jsx'
@@ -43,6 +50,7 @@ function App() {
   const importInputRef = useRef(null)
   const [activeTab, setActiveTab] = useState(tabs[0].id)
   const [dailyEntries, setDailyEntries] = useState(loadDailyEntries)
+  const initialDailyEntriesRef = useRef(dailyEntries)
   const [dailyForm, setDailyForm] = useState(createEmptyForm)
   const [editingDailyId, setEditingDailyId] = useState(null)
   const [dailyError, setDailyError] = useState('')
@@ -63,6 +71,8 @@ function App() {
   const [backupMessage, setBackupMessage] = useState('')
   const [backupError, setBackupError] = useState('')
   const [storageError, setStorageError] = useState('')
+  const [syncMessage, setSyncMessage] = useState('')
+  const [syncError, setSyncError] = useState('')
   const currentTab = tabs.find((tab) => tab.id === activeTab)
 
   function scheduleStorageError(error) {
@@ -74,6 +84,52 @@ function App() {
     const error = saveStorageArray(DAILY_ENTRIES_KEY, dailyEntries)
     return error ? scheduleStorageError(error) : undefined
   }, [dailyEntries])
+
+  useEffect(() => {
+    let shouldUpdate = true
+
+    async function loadCloudDailyEntries() {
+      const {
+        data,
+        error: supabaseError,
+        skipped,
+      } = await loadDailyEntriesFromSupabase()
+
+      if (!shouldUpdate || skipped) {
+        return
+      }
+
+      if (supabaseError) {
+        setSyncError('Could not load Daily Tracker records from Supabase.')
+        return
+      }
+
+      if (data.length === 0 && initialDailyEntriesRef.current.length > 0) {
+        const syncResult = await syncDailyEntriesToSupabase(
+          initialDailyEntriesRef.current,
+        )
+
+        if (syncResult.error) {
+          setSyncError('Could not upload local Daily Tracker records to Supabase.')
+          return
+        }
+
+        setSyncError('')
+        setSyncMessage('Local Daily Tracker records uploaded to Supabase.')
+        return
+      }
+
+      setDailyEntries(data)
+      setSyncError('')
+      setSyncMessage('Daily Tracker synced from Supabase.')
+    }
+
+    loadCloudDailyEntries()
+
+    return () => {
+      shouldUpdate = false
+    }
+  }, [])
 
   useEffect(() => {
     const error = saveStorageArray(PROJECTS_KEY, projects)
@@ -103,7 +159,7 @@ function App() {
     setDailyError('')
   }
 
-  function handleDailySubmit(event) {
+  async function handleDailySubmit(event) {
     event.preventDefault()
 
     const error = validateForm(dailyForm)
@@ -126,6 +182,22 @@ function App() {
     })
 
     resetDailyForm()
+
+    const { error: supabaseError, skipped } =
+      await saveDailyEntryToSupabase(nextEntry)
+
+    if (skipped) {
+      return
+    }
+
+    if (supabaseError) {
+      setSyncMessage('')
+      setSyncError('Could not save this daily entry to Supabase.')
+      return
+    }
+
+    setSyncError('')
+    setSyncMessage('Daily entry synced to Supabase.')
   }
 
   function handleEditDailyEntry(entry) {
@@ -135,12 +207,28 @@ function App() {
     setActiveTab('daily')
   }
 
-  function handleDeleteDailyEntry(entryId) {
+  async function handleDeleteDailyEntry(entryId) {
     setDailyEntries((entries) => entries.filter((entry) => entry.id !== entryId))
 
     if (editingDailyId === entryId) {
       resetDailyForm()
     }
+
+    const { error: supabaseError, skipped } =
+      await deleteDailyEntryFromSupabase(entryId)
+
+    if (skipped) {
+      return
+    }
+
+    if (supabaseError) {
+      setSyncMessage('')
+      setSyncError('Could not delete this daily entry from Supabase.')
+      return
+    }
+
+    setSyncError('')
+    setSyncMessage('Daily entry deleted from Supabase.')
   }
 
   function updateProjectForm(field, value) {
@@ -379,6 +467,23 @@ function App() {
         setBackupError('')
         setStorageError('')
         setBackupMessage('Data imported successfully.')
+
+        syncDailyEntriesToSupabase(importedData.dailyEntries).then(
+          ({ error, skipped }) => {
+            if (skipped) {
+              return
+            }
+
+            if (error) {
+              setSyncMessage('')
+              setSyncError('Imported daily entries could not sync to Supabase.')
+              return
+            }
+
+            setSyncError('')
+            setSyncMessage('Imported daily entries synced to Supabase.')
+          },
+        )
       } catch {
         setBackupMessage('')
         setBackupError('Import failed. Please upload a valid backup JSON file.')
@@ -394,7 +499,7 @@ function App() {
     event.target.value = ''
   }
 
-  function handleClearAllData() {
+  async function handleClearAllData() {
     const confirmed = window.confirm(
       'Clear all app data? This cannot be undone. Export a backup first if needed.',
     )
@@ -412,6 +517,22 @@ function App() {
     setBackupError('')
     setStorageError('')
     setBackupMessage('All local app data was cleared.')
+
+    const { error: supabaseError, skipped } =
+      await clearDailyEntriesFromSupabase()
+
+    if (skipped) {
+      return
+    }
+
+    if (supabaseError) {
+      setSyncMessage('')
+      setSyncError('Could not clear Daily Tracker records from Supabase.')
+      return
+    }
+
+    setSyncError('')
+    setSyncMessage('Daily Tracker records were cleared from Supabase.')
   }
 
   function renderTabContent() {
@@ -503,6 +624,8 @@ function App() {
         backupMessage={backupMessage}
         importInputRef={importInputRef}
         storageError={storageError}
+        syncError={syncError}
+        syncMessage={syncMessage}
         onClear={handleClearAllData}
         onExport={handleExportData}
         onImportClick={handleImportClick}

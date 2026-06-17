@@ -3,6 +3,8 @@ function DataControls({
   backupMessage,
   importInputRef,
   storageError,
+  syncError,
+  syncMessage,
   onClear,
   onExport,
   onImportClick,
@@ -20,6 +22,8 @@ function DataControls({
         {backupMessage && <p className="data-message">{backupMessage}</p>}
         {backupError && <p className="data-error">{backupError}</p>}
         {storageError && <p className="data-error">{storageError}</p>}
+        {syncMessage && <p className="data-message">{syncMessage}</p>}
+        {syncError && <p className="data-error">{syncError}</p>}
       </div>
       <div className="data-actions">
         <button type="button" className="data-button" onClick={onExport}>

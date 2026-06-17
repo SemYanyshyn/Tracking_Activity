@@ -5,6 +5,8 @@ function Header({
   backupMessage,
   importInputRef,
   storageError,
+  syncError,
+  syncMessage,
   onClear,
   onExport,
   onImportClick,
@@ -24,6 +26,8 @@ function Header({
         backupMessage={backupMessage}
         importInputRef={importInputRef}
         storageError={storageError}
+        syncError={syncError}
+        syncMessage={syncMessage}
         onClear={onClear}
         onExport={onExport}
         onImportClick={onImportClick}
