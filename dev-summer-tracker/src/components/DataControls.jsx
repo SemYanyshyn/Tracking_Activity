@@ -1,6 +1,7 @@
 function DataControls({
   backupError,
   backupMessage,
+  canEdit,
   importInputRef,
   storageError,
   syncError,
@@ -25,24 +26,31 @@ function DataControls({
         {syncMessage && <p className="data-message">{syncMessage}</p>}
         {syncError && <p className="data-error">{syncError}</p>}
       </div>
-      <div className="data-actions">
-        <button type="button" className="data-button" onClick={onExport}>
-          Export Data
-        </button>
-        <button type="button" className="data-button" onClick={onImportClick}>
-          Import Data
-        </button>
-        <button type="button" className="data-button danger" onClick={onClear}>
-          Clear All Data
-        </button>
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden-file-input"
-          onChange={onImportFile}
-        />
-      </div>
+      {canEdit ? (
+        <div className="data-actions">
+          <button type="button" className="data-button" onClick={onExport}>
+            Export Data
+          </button>
+          <button type="button" className="data-button" onClick={onImportClick}>
+            Import Data
+          </button>
+          <button type="button" className="data-button danger" onClick={onClear}>
+            Clear All Data
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden-file-input"
+            onChange={onImportFile}
+          />
+        </div>
+      ) : (
+        <p className="data-hint">
+          Public visitors can view the dashboard only. Login as owner to manage
+          backups or change data.
+        </p>
+      )}
     </section>
   )
 }

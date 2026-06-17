@@ -2,6 +2,7 @@ import WeeklyReviewForm from './WeeklyReviewForm.jsx'
 import WeeklyReviewList from './WeeklyReviewList.jsx'
 
 function WeeklyReview({
+  canEdit,
   editingId,
   error,
   form,
@@ -24,16 +25,23 @@ function WeeklyReview({
         <h3>Review the week, choose the next focus, and protect recovery.</h3>
       </article>
 
-      <WeeklyReviewForm
-        editingId={editingId}
-        error={error}
-        form={form}
-        onCancelEdit={onCancelEdit}
-        onChange={onChange}
-        onSubmit={onSubmit}
-      />
+      {canEdit && (
+        <WeeklyReviewForm
+          editingId={editingId}
+          error={error}
+          form={form}
+          onCancelEdit={onCancelEdit}
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      )}
 
-      <WeeklyReviewList reviews={reviews} onEdit={onEdit} onDelete={onDelete} />
+      <WeeklyReviewList
+        canEdit={canEdit}
+        reviews={reviews}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
     </section>
   )
 }

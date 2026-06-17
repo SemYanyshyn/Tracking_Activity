@@ -4,6 +4,7 @@ import RoadmapForm from './RoadmapForm.jsx'
 import RoadmapList from './RoadmapList.jsx'
 
 function Roadmap({
+  canEdit,
   editingId,
   error,
   form,
@@ -45,14 +46,16 @@ function Roadmap({
         </div>
       </article>
 
-      <RoadmapForm
-        editingId={editingId}
-        error={error}
-        form={form}
-        onCancelEdit={onCancelEdit}
-        onChange={onChange}
-        onSubmit={onSubmit}
-      />
+      {canEdit && (
+        <RoadmapForm
+          editingId={editingId}
+          error={error}
+          form={form}
+          onCancelEdit={onCancelEdit}
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      )}
 
       <div className="filters-row">
         <label className="field">
@@ -87,6 +90,7 @@ function Roadmap({
       </div>
 
       <RoadmapList
+        canEdit={canEdit}
         items={items}
         filteredItems={filteredItems}
         onEdit={onEdit}

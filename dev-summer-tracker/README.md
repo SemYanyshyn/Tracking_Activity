@@ -27,6 +27,8 @@ The app helps track React learning, project progress, English practice, movement
 - Weekly review tracker
 - Export Data and Import Data JSON backup
 - Supabase cloud sync for daily progress records
+- Supabase Auth admin login
+- Read-only public mode for visitors
 - GitHub Pages deployment with GitHub Actions
 - Responsive dark UI for desktop and mobile
 
@@ -89,10 +91,13 @@ The detailed Supabase SQL setup is documented in [`SUPABASE_SETUP.md`](./SUPABAS
 
 Important security note:
 
-- This project does not use authentication.
+- The app uses Supabase Auth for owner login.
+- Visitors can read public dashboard data in read-only mode.
 - Do not use a Supabase `service_role` key in the frontend.
 - Use only the Supabase anon public key.
-- For a real private app, add authentication and Row Level Security policies.
+- Row Level Security must be enabled in Supabase so only the owner can insert, update, or delete records.
+
+The owner-only RLS policies are available in [`supabase/rls_daily_entries.sql`](./supabase/rls_daily_entries.sql).
 
 ## Environment Variables
 
@@ -107,11 +112,41 @@ Then fill in your Supabase values:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_OWNER_USER_ID=c9bebb57-c04b-42c2-b8c7-7d123969c3d0
 ```
 
 Do not commit `.env`.
 
 The `.env` file contains local secrets/configuration and must stay ignored by Git. The project includes `.env.example` as a safe template for other environments.
+
+`VITE_OWNER_USER_ID` is the Supabase Auth user UID that is allowed to edit data in the UI. It is not a secret, but the database must still enforce the same owner rule with RLS policies.
+
+## Admin Login and Read-only Mode
+
+The public GitHub Pages site works in read-only mode by default.
+
+Visitors can:
+
+- View the Dashboard
+- See public results and statistics
+- View generated chart images if they exist
+
+Only the owner can:
+
+- Add daily entries
+- Edit or delete entries
+- Import backup JSON
+- Clear app data
+- Access the full tracker tabs
+
+To edit data:
+
+1. Open the app.
+2. Use the Admin Login form.
+3. Log in with the Supabase Auth email and password for the owner account.
+4. Confirm the header shows `Admin mode`.
+
+If another Supabase user logs in, the app remains in `Read-only mode`.
 
 ## Local Setup
 
@@ -150,13 +185,19 @@ VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```
 
+The workflow also passes:
+
+```text
+VITE_OWNER_USER_ID
+```
+
 In GitHub:
 
 1. Open the repository.
 2. Go to Settings.
 3. Open Secrets and variables.
 4. Open Actions.
-5. Add both secrets.
+5. Add the Supabase URL and anon key secrets.
 6. Push to the `main` branch.
 7. Wait for the GitHub Actions deploy workflow to finish.
 
@@ -174,6 +215,8 @@ Implemented:
 - Projects, Roadmap, and Weekly Review sections
 - Local JSON backup
 - Supabase sync for daily progress records
+- Owner-only edit mode with Supabase Auth
+- Public read-only dashboard mode
 - GitHub Pages deployment
 - Responsive dark design
 

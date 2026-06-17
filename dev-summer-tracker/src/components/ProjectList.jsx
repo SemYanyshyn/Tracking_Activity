@@ -4,7 +4,7 @@ import {
   PROJECT_STATUSES,
 } from '../data.js'
 
-function ProjectCard({ project, onDelete, onEdit, onStatusChange }) {
+function ProjectCard({ canEdit, project, onDelete, onEdit, onStatusChange }) {
   return (
     <article className="project-card">
       <div className="project-card-header">
@@ -14,14 +14,16 @@ function ProjectCard({ project, onDelete, onEdit, onStatusChange }) {
           </span>
           <h3>{project.name}</h3>
         </div>
-        <div className="entry-actions">
-          <button type="button" onClick={() => onEdit(project)}>
-            Edit
-          </button>
-          <button type="button" onClick={() => onDelete(project.id)}>
-            Delete
-          </button>
-        </div>
+        {canEdit && (
+          <div className="entry-actions">
+            <button type="button" onClick={() => onEdit(project)}>
+              Edit
+            </button>
+            <button type="button" onClick={() => onDelete(project.id)}>
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="project-meta">
@@ -68,29 +70,35 @@ function ProjectCard({ project, onDelete, onEdit, onStatusChange }) {
         )}
       </div>
 
-      <label className="status-control">
-        <span>Change status</span>
-        <select
-          value={project.status}
-          onChange={(event) => onStatusChange(project.id, event.target.value)}
-        >
-          {PROJECT_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-      </label>
+      {canEdit && (
+        <label className="status-control">
+          <span>Change status</span>
+          <select
+            value={project.status}
+            onChange={(event) => onStatusChange(project.id, event.target.value)}
+          >
+            {PROJECT_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </article>
   )
 }
 
-function ProjectList({ onDelete, onEdit, onStatusChange, projects }) {
+function ProjectList({ canEdit, onDelete, onEdit, onStatusChange, projects }) {
   if (projects.length === 0) {
     return (
       <div className="empty-state">
         <h3>No projects yet</h3>
-        <p>Add your first portfolio project with the form above.</p>
+        <p>
+          {canEdit
+            ? 'Add your first portfolio project with the form above.'
+            : 'No public projects are available yet.'}
+        </p>
       </div>
     )
   }
@@ -102,6 +110,7 @@ function ProjectList({ onDelete, onEdit, onStatusChange, projects }) {
         {projects.map((project) => (
           <ProjectCard
             key={project.id}
+            canEdit={canEdit}
             project={project}
             onEdit={onEdit}
             onDelete={onDelete}

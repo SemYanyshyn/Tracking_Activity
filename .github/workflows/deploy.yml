@@ -39,6 +39,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_OWNER_USER_ID: c9bebb57-c04b-42c2-b8c7-7d123969c3d0
         run: npm run build
 
       - name: Upload artifact

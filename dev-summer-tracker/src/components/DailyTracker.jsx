@@ -2,6 +2,7 @@ import DailyEntryForm from './DailyEntryForm.jsx'
 import DailyEntryList from './DailyEntryList.jsx'
 
 function DailyTracker({
+  canEdit,
   editingId,
   entries,
   error,
@@ -19,16 +20,23 @@ function DailyTracker({
         <h2>Daily progress form</h2>
       </div>
 
-      <DailyEntryForm
-        editingId={editingId}
-        error={error}
-        form={form}
-        onCancelEdit={onCancelEdit}
-        onChange={onChange}
-        onSubmit={onSubmit}
-      />
+      {canEdit && (
+        <DailyEntryForm
+          editingId={editingId}
+          error={error}
+          form={form}
+          onCancelEdit={onCancelEdit}
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      )}
 
-      <DailyEntryList entries={entries} onEdit={onEdit} onDelete={onDelete} />
+      <DailyEntryList
+        canEdit={canEdit}
+        entries={entries}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
     </section>
   )
 }

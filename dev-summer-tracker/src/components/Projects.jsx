@@ -2,6 +2,7 @@ import ProjectForm from './ProjectForm.jsx'
 import ProjectList from './ProjectList.jsx'
 
 function Projects({
+  canEdit,
   editingId,
   error,
   form,
@@ -20,16 +21,19 @@ function Projects({
         <h2>Portfolio project tracker</h2>
       </div>
 
-      <ProjectForm
-        editingId={editingId}
-        error={error}
-        form={form}
-        onCancelEdit={onCancelEdit}
-        onChange={onChange}
-        onSubmit={onSubmit}
-      />
+      {canEdit && (
+        <ProjectForm
+          editingId={editingId}
+          error={error}
+          form={form}
+          onCancelEdit={onCancelEdit}
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      )}
 
       <ProjectList
+        canEdit={canEdit}
         projects={projects}
         onEdit={onEdit}
         onDelete={onDelete}

@@ -1,9 +1,13 @@
-function DailyEntryList({ entries, onDelete, onEdit }) {
+function DailyEntryList({ canEdit, entries, onDelete, onEdit }) {
   if (entries.length === 0) {
     return (
       <div className="empty-state">
         <h3>No daily entries yet</h3>
-        <p>Add your first progress record with the form above.</p>
+        <p>
+          {canEdit
+            ? 'Add your first progress record with the form above.'
+            : 'No public daily entries are available yet.'}
+        </p>
       </div>
     )
   }
@@ -22,14 +26,16 @@ function DailyEntryList({ entries, onDelete, onEdit }) {
                   {entry.energy}/10
                 </p>
               </div>
-              <div className="entry-actions">
-                <button type="button" onClick={() => onEdit(entry)}>
-                  Edit
-                </button>
-                <button type="button" onClick={() => onDelete(entry.id)}>
-                  Delete
-                </button>
-              </div>
+              {canEdit && (
+                <div className="entry-actions">
+                  <button type="button" onClick={() => onEdit(entry)}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => onDelete(entry.id)}>
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
 
             <ul className="done-list">

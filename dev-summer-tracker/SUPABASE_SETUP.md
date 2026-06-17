@@ -55,9 +55,15 @@ The app field `pomodoros` is stored in Supabase as `pomodoro_count`.
 
 ## 3. Row Level Security
 
-This app currently has no authentication. For a personal public demo, the simplest setup is to keep RLS disabled for `daily_entries`.
+This app uses Supabase Auth for owner login. Public visitors can read dashboard data, but only the owner account can create, update, or delete daily entries.
 
-Important: without authentication, anyone who can use your deployed app and Supabase anon key can potentially read/write this table. For private real data, add Supabase Auth before enabling public cloud sync.
+Enable Row Level Security and apply the owner-only policies from:
+
+```text
+supabase/rls_daily_entries.sql
+```
+
+Important: the frontend only hides edit controls. Real protection must come from Supabase RLS policies. Do not use a `service_role` key in the frontend.
 
 ## 4. Local environment variables
 
@@ -66,6 +72,7 @@ Create a local `.env` file:
 ```text
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_OWNER_USER_ID=c9bebb57-c04b-42c2-b8c7-7d123969c3d0
 ```
 
 Then run:
@@ -88,5 +95,10 @@ VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```
 
-After changing secrets, rerun the `Deploy to GitHub Pages` workflow.
+The GitHub Actions workflow also passes:
 
+```text
+VITE_OWNER_USER_ID
+```
+
+After changing secrets, rerun the `Deploy to GitHub Pages` workflow.

@@ -14,6 +14,7 @@ import Projects from './components/Projects.jsx'
 import Roadmap from './components/Roadmap.jsx'
 import Tabs from './components/Tabs.jsx'
 import WeeklyReview from './components/WeeklyReview.jsx'
+import { isSupabaseConfigured, supabase } from './supabaseClient.js'
 import {
   createEmptyForm,
   createEmptyProjectForm,
@@ -46,6 +47,9 @@ import {
   WEEKLY_REVIEWS_KEY,
 } from './data.js'
 
+const OWNER_USER_ID = import.meta.env.VITE_OWNER_USER_ID
+const READ_ONLY_MESSAGE = 'Read-only mode. Only the owner can modify app data.'
+
 function App() {
   const importInputRef = useRef(null)
   const [activeTab, setActiveTab] = useState(tabs[0].id)
@@ -73,12 +77,64 @@ function App() {
   const [storageError, setStorageError] = useState('')
   const [syncMessage, setSyncMessage] = useState('')
   const [syncError, setSyncError] = useState('')
-  const currentTab = tabs.find((tab) => tab.id === activeTab)
+  const [session, setSession] = useState(null)
+  const [authLoading, setAuthLoading] = useState(isSupabaseConfigured)
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
+  const canEdit = session?.user?.id === OWNER_USER_ID
+  const visibleTabs = canEdit ? tabs : tabs.filter((tab) => tab.id === 'dashboard')
+  const selectedTab = canEdit ? activeTab : 'dashboard'
+  const currentTab = tabs.find((tab) => tab.id === selectedTab)
 
   function scheduleStorageError(error) {
     const timeoutId = window.setTimeout(() => setStorageError(error), 0)
     return () => window.clearTimeout(timeoutId)
   }
+
+  function blockReadOnlyAction() {
+    setBackupMessage('')
+    setBackupError(READ_ONLY_MESSAGE)
+    return false
+  }
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      return undefined
+    }
+
+    let shouldUpdate = true
+
+    async function loadSession() {
+      const { data, error } = await supabase.auth.getSession()
+
+      if (!shouldUpdate) {
+        return
+      }
+
+      if (error) {
+        setAuthError('Could not load admin session.')
+      }
+
+      setSession(data.session ?? null)
+      setAuthLoading(false)
+    }
+
+    loadSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      setAuthError('')
+    })
+
+    return () => {
+      shouldUpdate = false
+      subscription.unsubscribe()
+    }
+  }, [])
 
   useEffect(() => {
     const error = saveStorageArray(DAILY_ENTRIES_KEY, dailyEntries)
@@ -104,7 +160,11 @@ function App() {
         return
       }
 
-      if (data.length === 0 && initialDailyEntriesRef.current.length > 0) {
+      if (
+        canEdit &&
+        data.length === 0 &&
+        initialDailyEntriesRef.current.length > 0
+      ) {
         const syncResult = await syncDailyEntriesToSupabase(
           initialDailyEntriesRef.current,
         )
@@ -129,7 +189,7 @@ function App() {
     return () => {
       shouldUpdate = false
     }
-  }, [])
+  }, [canEdit])
 
   useEffect(() => {
     const error = saveStorageArray(PROJECTS_KEY, projects)
@@ -161,6 +221,11 @@ function App() {
 
   async function handleDailySubmit(event) {
     event.preventDefault()
+
+    if (!canEdit) {
+      setDailyError(READ_ONLY_MESSAGE)
+      return
+    }
 
     const error = validateForm(dailyForm)
 
@@ -201,6 +266,10 @@ function App() {
   }
 
   function handleEditDailyEntry(entry) {
+    if (!canEdit) {
+      return
+    }
+
     setDailyForm(entryToForm(entry))
     setEditingDailyId(entry.id)
     setDailyError('')
@@ -208,6 +277,11 @@ function App() {
   }
 
   async function handleDeleteDailyEntry(entryId) {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     setDailyEntries((entries) => entries.filter((entry) => entry.id !== entryId))
 
     if (editingDailyId === entryId) {
@@ -247,6 +321,11 @@ function App() {
   function handleProjectSubmit(event) {
     event.preventDefault()
 
+    if (!canEdit) {
+      setProjectError(READ_ONLY_MESSAGE)
+      return
+    }
+
     const error = validateProjectForm(projectForm)
 
     if (error) {
@@ -270,6 +349,10 @@ function App() {
   }
 
   function handleEditProject(project) {
+    if (!canEdit) {
+      return
+    }
+
     setProjectForm(projectToForm(project))
     setEditingProjectId(project.id)
     setProjectError('')
@@ -277,6 +360,11 @@ function App() {
   }
 
   function handleDeleteProject(projectId) {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     setProjects((currentProjects) =>
       currentProjects.filter((project) => project.id !== projectId),
     )
@@ -287,6 +375,11 @@ function App() {
   }
 
   function handleChangeProjectStatus(projectId, status) {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     setProjects((currentProjects) =>
       currentProjects.map((project) =>
         project.id === projectId ? { ...project, status } : project,
@@ -309,6 +402,11 @@ function App() {
 
   function handleRoadmapSubmit(event) {
     event.preventDefault()
+
+    if (!canEdit) {
+      setRoadmapError(READ_ONLY_MESSAGE)
+      return
+    }
 
     const error = validateRoadmapForm(roadmapForm)
 
@@ -333,6 +431,10 @@ function App() {
   }
 
   function handleEditRoadmapItem(item) {
+    if (!canEdit) {
+      return
+    }
+
     setRoadmapForm(roadmapItemToForm(item))
     setEditingRoadmapId(item.id)
     setRoadmapError('')
@@ -340,6 +442,11 @@ function App() {
   }
 
   function handleDeleteRoadmapItem(itemId) {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     setRoadmapItems((items) => items.filter((item) => item.id !== itemId))
 
     if (editingRoadmapId === itemId) {
@@ -348,6 +455,11 @@ function App() {
   }
 
   function handleChangeRoadmapStatus(itemId, status) {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     setRoadmapItems((items) =>
       items.map((item) => (item.id === itemId ? { ...item, status } : item)),
     )
@@ -368,6 +480,11 @@ function App() {
 
   function handleWeeklyReviewSubmit(event) {
     event.preventDefault()
+
+    if (!canEdit) {
+      setWeeklyReviewError(READ_ONLY_MESSAGE)
+      return
+    }
 
     const error = validateWeeklyReviewForm(weeklyReviewForm)
 
@@ -395,6 +512,10 @@ function App() {
   }
 
   function handleEditWeeklyReview(review) {
+    if (!canEdit) {
+      return
+    }
+
     setWeeklyReviewForm(weeklyReviewToForm(review))
     setEditingWeeklyReviewId(review.id)
     setWeeklyReviewError('')
@@ -402,6 +523,11 @@ function App() {
   }
 
   function handleDeleteWeeklyReview(reviewId) {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     setWeeklyReviews((reviews) =>
       reviews.filter((review) => review.id !== reviewId),
     )
@@ -419,6 +545,11 @@ function App() {
   }
 
   function handleExportData() {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     const backupData = {
       dailyEntries,
       projects,
@@ -443,10 +574,21 @@ function App() {
   }
 
   function handleImportClick() {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     importInputRef.current?.click()
   }
 
   function handleImportFile(event) {
+    if (!canEdit) {
+      event.target.value = ''
+      blockReadOnlyAction()
+      return
+    }
+
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -500,6 +642,11 @@ function App() {
   }
 
   async function handleClearAllData() {
+    if (!canEdit) {
+      blockReadOnlyAction()
+      return
+    }
+
     const confirmed = window.confirm(
       'Clear all app data? This cannot be undone. Export a backup first if needed.',
     )
@@ -535,14 +682,73 @@ function App() {
     setSyncMessage('Daily Tracker records were cleared from Supabase.')
   }
 
+  async function handleAdminLogin(event) {
+    event.preventDefault()
+
+    if (!isSupabaseConfigured || !supabase) {
+      setAuthMessage('')
+      setAuthError('Supabase is not configured.')
+      return
+    }
+
+    setAuthLoading(true)
+    setAuthMessage('')
+    setAuthError('')
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: authEmail.trim(),
+      password: authPassword,
+    })
+
+    setAuthLoading(false)
+
+    if (error) {
+      setAuthError('Login failed. Check email and password.')
+      return
+    }
+
+    setSession(data.session ?? null)
+    setAuthPassword('')
+    setAuthMessage(
+      data.user?.id === OWNER_USER_ID
+        ? 'Admin login successful.'
+        : 'Signed in, but this account is not the owner.',
+    )
+  }
+
+  async function handleAdminLogout() {
+    if (!isSupabaseConfigured || !supabase) {
+      setSession(null)
+      return
+    }
+
+    setAuthLoading(true)
+    setAuthMessage('')
+    setAuthError('')
+
+    const { error } = await supabase.auth.signOut()
+
+    setAuthLoading(false)
+
+    if (error) {
+      setAuthError('Logout failed. Please try again.')
+      return
+    }
+
+    setSession(null)
+    setAuthPassword('')
+    setAuthMessage('Logged out. Read-only mode is active.')
+  }
+
   function renderTabContent() {
-    if (activeTab === 'dashboard') {
+    if (selectedTab === 'dashboard') {
       return <Dashboard entries={dailyEntries} />
     }
 
-    if (activeTab === 'daily') {
+    if (selectedTab === 'daily') {
       return (
         <DailyTracker
+          canEdit={canEdit}
           entries={dailyEntries}
           form={dailyForm}
           editingId={editingDailyId}
@@ -556,9 +762,10 @@ function App() {
       )
     }
 
-    if (activeTab === 'projects') {
+    if (selectedTab === 'projects') {
       return (
         <Projects
+          canEdit={canEdit}
           projects={projects}
           form={projectForm}
           editingId={editingProjectId}
@@ -573,9 +780,10 @@ function App() {
       )
     }
 
-    if (activeTab === 'roadmap') {
+    if (selectedTab === 'roadmap') {
       return (
         <Roadmap
+          canEdit={canEdit}
           items={roadmapItems}
           form={roadmapForm}
           editingId={editingRoadmapId}
@@ -590,9 +798,10 @@ function App() {
       )
     }
 
-    if (activeTab === 'weekly') {
+    if (selectedTab === 'weekly') {
       return (
         <WeeklyReview
+          canEdit={canEdit}
           reviews={weeklyReviews}
           form={weeklyReviewForm}
           editingId={editingWeeklyReviewId}
@@ -620,19 +829,31 @@ function App() {
   return (
     <div className="app-shell">
       <Header
+        authEmail={authEmail}
+        authError={authError}
+        authLoading={authLoading}
+        authMessage={authMessage}
+        authPassword={authPassword}
         backupError={backupError}
         backupMessage={backupMessage}
+        canEdit={canEdit}
         importInputRef={importInputRef}
+        isSupabaseConfigured={isSupabaseConfigured}
+        session={session}
         storageError={storageError}
         syncError={syncError}
         syncMessage={syncMessage}
         onClear={handleClearAllData}
+        onEmailChange={setAuthEmail}
         onExport={handleExportData}
         onImportClick={handleImportClick}
         onImportFile={handleImportFile}
+        onLogin={handleAdminLogin}
+        onLogout={handleAdminLogout}
+        onPasswordChange={setAuthPassword}
       />
 
-      <Tabs activeTab={activeTab} tabs={tabs} onChange={setActiveTab} />
+      <Tabs activeTab={selectedTab} tabs={visibleTabs} onChange={setActiveTab} />
 
       <main className="content-panel">{renderTabContent()}</main>
     </div>

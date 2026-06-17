@@ -1,11 +1,15 @@
 import { getWeeklyAverage, WEEKLY_SCORE_FIELDS } from '../data.js'
 
-function WeeklyReviewList({ onDelete, onEdit, reviews }) {
+function WeeklyReviewList({ canEdit, onDelete, onEdit, reviews }) {
   if (reviews.length === 0) {
     return (
       <div className="empty-state">
         <h3>No weekly reviews yet</h3>
-        <p>Add your first Sunday review with the form above.</p>
+        <p>
+          {canEdit
+            ? 'Add your first Sunday review with the form above.'
+            : 'No public weekly reviews are available yet.'}
+        </p>
       </div>
     )
   }
@@ -21,14 +25,16 @@ function WeeklyReviewList({ onDelete, onEdit, reviews }) {
                 <h4>{review.weekRange || 'Untitled week'}</h4>
                 <p>Average score: {getWeeklyAverage(review)}/10</p>
               </div>
-              <div className="entry-actions">
-                <button type="button" onClick={() => onEdit(review)}>
-                  Edit
-                </button>
-                <button type="button" onClick={() => onDelete(review.id)}>
-                  Delete
-                </button>
-              </div>
+              {canEdit && (
+                <div className="entry-actions">
+                  <button type="button" onClick={() => onEdit(review)}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => onDelete(review.id)}>
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
 
             <ul className="score-list">

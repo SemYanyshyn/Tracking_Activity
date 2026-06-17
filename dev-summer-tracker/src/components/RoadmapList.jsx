@@ -5,7 +5,7 @@ import {
   ROADMAP_STATUSES,
 } from '../data.js'
 
-function RoadmapCard({ item, onDelete, onEdit, onStatusChange }) {
+function RoadmapCard({ canEdit, item, onDelete, onEdit, onStatusChange }) {
   const isResourceLink =
     item.resource.startsWith('http://') ||
     item.resource.startsWith('https://') ||
@@ -30,14 +30,16 @@ function RoadmapCard({ item, onDelete, onEdit, onStatusChange }) {
           </div>
           <h3>{item.topic}</h3>
         </div>
-        <div className="entry-actions">
-          <button type="button" onClick={() => onEdit(item)}>
-            Edit
-          </button>
-          <button type="button" onClick={() => onDelete(item.id)}>
-            Delete
-          </button>
-        </div>
+        {canEdit && (
+          <div className="entry-actions">
+            <button type="button" onClick={() => onEdit(item)}>
+              Edit
+            </button>
+            <button type="button" onClick={() => onDelete(item.id)}>
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="project-meta">
@@ -60,29 +62,42 @@ function RoadmapCard({ item, onDelete, onEdit, onStatusChange }) {
         )}
       </div>
 
-      <label className="status-control">
-        <span>Change status</span>
-        <select
-          value={item.status}
-          onChange={(event) => onStatusChange(item.id, event.target.value)}
-        >
-          {ROADMAP_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-      </label>
+      {canEdit && (
+        <label className="status-control">
+          <span>Change status</span>
+          <select
+            value={item.status}
+            onChange={(event) => onStatusChange(item.id, event.target.value)}
+          >
+            {ROADMAP_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </article>
   )
 }
 
-function RoadmapList({ filteredItems, items, onDelete, onEdit, onStatusChange }) {
+function RoadmapList({
+  canEdit,
+  filteredItems,
+  items,
+  onDelete,
+  onEdit,
+  onStatusChange,
+}) {
   if (items.length === 0) {
     return (
       <div className="empty-state">
         <h3>No roadmap items yet</h3>
-        <p>Add your first learning topic with the form above.</p>
+        <p>
+          {canEdit
+            ? 'Add your first learning topic with the form above.'
+            : 'No public roadmap items are available yet.'}
+        </p>
       </div>
     )
   }
@@ -103,6 +118,7 @@ function RoadmapList({ filteredItems, items, onDelete, onEdit, onStatusChange })
         {filteredItems.map((item) => (
           <RoadmapCard
             key={item.id}
+            canEdit={canEdit}
             item={item}
             onEdit={onEdit}
             onDelete={onDelete}
